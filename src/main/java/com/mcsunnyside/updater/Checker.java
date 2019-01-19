@@ -1,35 +1,18 @@
 package com.mcsunnyside.updater;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.omg.PortableServer.ID_ASSIGNMENT_POLICY_ID;
-
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 
 
 
 public class Checker {
-	static StringBuffer resultBuffer = new StringBuffer();
 	public Checker() {
 		try {
 			run();
@@ -40,27 +23,10 @@ public class Checker {
 	}
 	public void run() throws IOException {
 		System.out.println("Checking the server update...");
-		URL url = new URL("https://launchermeta.mojang.com/mc/game/version_manifest.json");
-		URLConnection urlConnection = null;
-			urlConnection = url.openConnection();
-		HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
-			httpURLConnection.setRequestMethod("GET");
-		httpURLConnection.setUseCaches(false);
-		httpURLConnection.setDoInput(true);
-			httpURLConnection.connect();
-			if (httpURLConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-				InputStream inputStream = httpURLConnection.getInputStream();
-				InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-				BufferedReader reader = new BufferedReader(inputStreamReader);
-				String tempLine = null;
-				
-				while ((tempLine = reader.readLine()) != null) {
-					resultBuffer.append(tempLine);
-					resultBuffer.append("\n");
-				}
-			}
-		System.out.print(resultBuffer.toString());
-		update(resultBuffer.toString());
+		String json = Network.GET("https://launchermeta.mojang.com/mc/game/version_manifest.json");
+		
+		System.out.print(json);
+		update(json);
 		
 	}
 	public void update(String jsonString) throws IOException {
@@ -70,32 +36,12 @@ public class Checker {
 			System.out.println("Remote version is "+lastet);
 			System.out.println("Updating the server jar file...");
 			JSONObject serverJSONObject= JSON.parseObject(jsonString);
-			String serverJSONurl = (String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("url");
+			String gameJSONurl = (String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("url");
 			String snapshot = (String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("id");
-			serverJSONObject.clear();
-			System.out.println(snapshot);;
-			URL url = new URL(serverJSONurl);
-			URLConnection urlConnection = null;
-			urlConnection = url.openConnection();
-		HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
-			httpURLConnection.setRequestMethod("GET");
-		httpURLConnection.setUseCaches(false);
-		httpURLConnection.setDoInput(true);
-			httpURLConnection.connect();
-			if (httpURLConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-				InputStream inputStream = httpURLConnection.getInputStream();
-				InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-				BufferedReader reader = new BufferedReader(inputStreamReader);
-				String tempLine = null;
-				while ((tempLine = reader.readLine()) != null) {
-					resultBuffer.append(tempLine);
-					resultBuffer.append("\n");
-				}
-			}
+			String serverJSON = Network.GET(gameJSONurl);
 			System.out.println("Download JSON completed.");
-			System.out.println(resultBuffer);
-			
-			JSONObject jsonObject = JSON.parseObject(resultBuffer.toString());
+			System.out.println(serverJSON);
+			JSONObject jsonObject = JSON.parseObject(serverJSON);
 			JSONObject jsonDownloadObject=  jsonObject.getJSONObject("downloads");
 			JSONObject jsonServerDownloadObject = jsonDownloadObject.getJSONObject("server");
 			String serverJARurl = (String) jsonServerDownloadObject.get("url");
