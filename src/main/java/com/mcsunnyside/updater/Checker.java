@@ -9,9 +9,6 @@ import java.net.URLConnection;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
-
-
-
 public class Checker {
 	public Checker() {
 		try {
@@ -24,62 +21,31 @@ public class Checker {
 	public void run() throws IOException {
 		System.out.println("Checking the server update...");
 		String json = Network.GET("https://launchermeta.mojang.com/mc/game/version_manifest.json");
-		
-		System.out.print(json);
 		update(json);
 		
 	}
 	public void update(String jsonString) throws IOException {
 		String lastet = (String) JSON.parseObject(jsonString).getJSONObject("latest").get("snapshot");
-		if(Config.readVer()!=lastet) {
+		if(!Config.readVer().equals(lastet)) {
 			System.out.println("Local version is "+Config.readVer());
 			System.out.println("Remote version is "+lastet);
 			System.out.println("Updating the server jar file...");
 			JSONObject serverJSONObject= JSON.parseObject(jsonString);
-			String gameJSONurl = (String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("url");
-			String snapshot = (String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("id");
-			String serverJSON = Network.GET(gameJSONurl);
-			System.out.println("Download JSON completed.");
-			System.out.println(serverJSON);
-			JSONObject jsonObject = JSON.parseObject(serverJSON);
-			JSONObject jsonDownloadObject=  jsonObject.getJSONObject("downloads");
-			JSONObject jsonServerDownloadObject = jsonDownloadObject.getJSONObject("server");
-			String serverJARurl = (String) jsonServerDownloadObject.get("url");
-			System.out.println(serverJARurl);
+			System.out.println("Update Source: Mojang API");
+			String serverJSON = Network.GET((String) serverJSONObject.getJSONArray("versions").getJSONObject(0).get("url"));
+			System.out.println("Reading download url from json file...");
+			String serverJARurl=  (String) JSON.parseObject(serverJSON).getJSONObject("downloads").getJSONObject("server").get("url");
+			System.out.println("ServerJar url:"+serverJARurl);
+			System.out.println("Downloading server...");
+			
 			saveBinaryFile(new URL(serverJARurl));
+			System.out.println("Download server completed...");
 			Config.writeVer(lastet);
-//			int i = 0;
-//			while (array.size()>i) {
-//				if(array.getJSONObject(i).get("id").toString()==lastet) {
-//					File file = new File("server.jar");
-//					if(file.exists())
-//						file.delete();
-//					System.out.println("Downloading the server jar file...");
-//					saveBinaryFile(new URL((String)array.getJSONObject(i).get("url")));
-//					System.out.println("Download completed.");
-//					Config.writeVer(lastet);
-//					break;
-//				}else {
-//					i++;
-//				}
-				
+			}else {
+				System.out.println("Nothing to update.");
 			}
 			System.out.println("Finish");
 		}
-//		String lastet = jsonObject.getJSONObject("lastet").getString("snapshot");
-//		if(Config.readVer()!=lastet) {
-//			int i = 0;
-//			while (jsonObject.getJSONArray("versions").getJSONObject(i)!=null){
-//				String version = jsonObject.getJSONArray("versions").getJSONObject(i).getString("id");
-//				if(version==lastet) {
-//					System.out.println("Downloading from" +jsonObject.getJSONArray("versions").getJSONObject(i).getString("url"));
-//					saveBinaryFile(new URL(jsonObject.getJSONArray("versions").getJSONObject(i).getString("url")));
-//					break;
-//				}
-//					
-//				}
-//				
-//			}
 
 public void saveBinaryFile(URL u) throws IOException {
 		URLConnection uc = u.openConnection();
